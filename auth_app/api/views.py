@@ -4,9 +4,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-# from django.conf import settings
-
-from .serializers import RegistrationSerializer
+from .serializers import RegistrationSerializer, CustomTokenObtainPairSerializer
 
 
 class RegistrationView(APIView):
@@ -36,28 +34,32 @@ class MoinWorldView(APIView):
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
+
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
-        refresh = response.data.get('refresh')
-        access = response.data.get('access')
 
-        response.set_cookie(
-            key='access_token',
-            value=access,
-            httponly=True,
-            secure=True,
-            samesite='Lax'
-        )
+        if response.status_code == 200:
+            refresh = response.data.get('refresh')
+            access = response.data.get('access')
 
-        response.set_cookie(
-            key='refresh_token',
-            value=refresh,
-            httponly=True,
-            secure=True,
-            samesite='Lax'
-        )
+            response.set_cookie(
+                key='access_token',
+                value=access,
+                httponly=True,
+                secure=True,
+                samesite='Lax'
+            )
 
-        response.data = {"message": "Tokens set in cookies"}
+            response.set_cookie(
+                key='refresh_token',
+                value=refresh,
+                httponly=True,
+                secure=True,
+                samesite='Lax'
+            )
+
+            response.data = {"message": "Login successful"}
         return response
 
 
